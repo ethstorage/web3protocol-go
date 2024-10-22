@@ -166,8 +166,6 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 }
 
 func handleCallContract(client *ethclient.Client, msg ethereum.CallMsg) ([]byte, error) {
-	fmt.Printf("CallContract(protocol) chain=%d, to=%x \n", client.ChainID, *msg.To)
-
 	bs, err := client.CallContract(context.Background(), msg, nil)
 	if err != nil {
 		if err.Error() == "execution reverted" {

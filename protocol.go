@@ -13,16 +13,16 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/sirupsen/logrus"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	golanglru2 "github.com/hashicorp/golang-lru/v2/expirable"
+	"github.com/sirupsen/logrus"
 )
 
 type Client struct {
 	Config *Config
 	Logger *logrus.Logger
-	
+
 	// Cache for domain name resolution
 	DomainNameResolutionCache *localCache
 
@@ -39,12 +39,14 @@ type ResolveModeCacheKey struct {
 }
 
 type DomainNameService string
+
 const (
 	DomainNameServiceENS  = "ens"
 	DomainNameServiceW3NS = "w3ns"
 )
 
 type ResolveMode string
+
 const (
 	ResolveModeAuto             = "auto"
 	ResolveModeManual           = "manual"
@@ -52,12 +54,14 @@ const (
 )
 
 type ContractCallMode string
+
 const (
 	ContractCallModeCalldata = "calldata"
 	ContractCallModeMethod   = "method"
 )
 
 type ContractReturnProcessing string
+
 const (
 	// Expect the whole returned data to be ABI-encoded bytes. Decode.
 	ContractReturnProcessingDecodeABIEncodedBytes = "decodeABIEncodedBytes"
@@ -75,12 +79,12 @@ const (
 type ParsedWeb3Url struct {
 	Protocol string
 	Hostname string
-	ChainId string
+	ChainId  string
 
 	// The PathQuery is the full path, including the Pathname and Query
 	PathQuery string
-	Path string
-	Query string
+	Path      string
+	Query     string
 
 	Fragment string
 }
@@ -91,7 +95,7 @@ type Web3URL struct {
 	Url string
 	// The request HTTP headers
 	HttpHeaders map[string]string
-	
+
 	// A raw splitting of the web3 URL parts, to be used by the processing
 	// You should not use this directly outside of this package
 	UrlParts ParsedWeb3Url
@@ -152,10 +156,10 @@ type FetchedWeb3URL struct {
  */
 func NewClient(config *Config) (client *Client) {
 	client = &Client{
-		Config: config,
+		Config:                    config,
 		DomainNameResolutionCache: newLocalCache(time.Duration(config.NameAddrCacheDurationInMinutes)*time.Minute, 10*time.Minute),
-		ResolveModeCache: golanglru2.NewLRU[ResolveModeCacheKey, ResolveMode](1000, nil, time.Duration(0)),
-		Logger: logrus.New(),
+		ResolveModeCache:          golanglru2.NewLRU[ResolveModeCacheKey, ResolveMode](1000, nil, time.Duration(0)),
+		Logger:                    logrus.New(),
 	}
 	client.ResourceRequestCachingTracker = NewResourceRequestCachingTracker(client)
 
@@ -176,7 +180,7 @@ func (client *Client) FetchUrl(url string, httpHeaders map[string]string) (fetch
 		return
 	}
 
-	// Attempt to make a response right away, without a contract call : 
+	// Attempt to make a response right away, without a contract call :
 	// We can do it if we know the output has not changed (see ERC-7774 resource request caching)
 	earlyFetchedUrl, success, err := client.AttemptEarlyResponse(&parsedUrl)
 	if err != nil {
@@ -347,7 +351,7 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 	resolveMode, resolveModeIsCached := client.ResolveModeCache.Get(resolveModeCacheKey)
 	if resolveModeIsCached {
 		web3Url.ResolveMode = resolveMode
-	// Not cached: Call the resolveMode in the contract
+		// Not cached: Call the resolveMode in the contract
 	} else {
 		resolveModeCalldata, err := methodCallToCalldata("resolveMode", []abi.Type{}, []interface{}{})
 		if err != nil {
@@ -416,6 +420,7 @@ func (client *Client) FetchContractReturn(web3Url *Web3URL) (contractReturn []by
 	}
 
 	// Do the contract call
+	fmt.Printf("CallContract url=%s \n", web3Url.Url)
 	contractReturn, err = client.callContract(web3Url.ContractAddress, web3Url.ChainId, calldata)
 	if err != nil {
 		return
