@@ -188,6 +188,7 @@ func (client *Client) FetchUrl(url string, httpHeaders map[string]string) (fetch
 		return
 	}
 	if success {
+		fmt.Printf("Hit cache: %s\n", &parsedUrl.Url)
 		return earlyFetchedUrl, nil
 	}
 
@@ -350,9 +351,11 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 	resolveModeCacheKey := ResolveModeCacheKey{web3Url.ChainId, web3Url.ContractAddress}
 	resolveMode, resolveModeIsCached := client.ResolveModeCache.Get(resolveModeCacheKey)
 	if resolveModeIsCached {
+		fmt.Printf("Hit cache: %v\n", resolveModeCacheKey)
 		web3Url.ResolveMode = resolveMode
 		// Not cached: Call the resolveMode in the contract
 	} else {
+		fmt.Printf("CallContract(resolveMode): %v\n", resolveModeCacheKey)
 		resolveModeCalldata, err := methodCallToCalldata("resolveMode", []abi.Type{}, []interface{}{})
 		if err != nil {
 			return web3Url, err
@@ -420,7 +423,7 @@ func (client *Client) FetchContractReturn(web3Url *Web3URL) (contractReturn []by
 	}
 
 	// Do the contract call
-	fmt.Printf("CallContract url=%s \n", web3Url.Url)
+	fmt.Printf("CallContract: %s \n", web3Url.Url)
 	contractReturn, err = client.callContract(web3Url.ContractAddress, web3Url.ChainId, calldata)
 	if err != nil {
 		return
