@@ -179,6 +179,7 @@ func (client *Client) resolve(ethClient *ethclient.Client, nameServiceChain int,
 	if e != nil {
 		return common.Address{}, 0, e
 	}
+	fmt.Printf("CallContract(ens) chain=%d \n", nameServiceChain)
 	bs, err := ethClient.CallContract(context.Background(), msg, nil)
 	if err != nil {
 		return common.Address{}, 0, &ErrorWithHttpCode{http.StatusNotFound, err.Error()}
