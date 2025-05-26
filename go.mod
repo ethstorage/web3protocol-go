@@ -1,4 +1,4 @@
-module github.com/web3-protocol/web3protocol-go
+module github.com/ethstorage/web3protocol-go
 
 go 1.19
 
