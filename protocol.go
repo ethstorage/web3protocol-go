@@ -179,6 +179,7 @@ func (client *Client) FetchUrlDirect(url string, httpHeaders map[string]string) 
  * Step 1 : Parse the URL and determine how we are going to call the main contract.
  */
 func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3Url Web3URL, err error) {
+	fmt.Printf("==ParseUrl: %v\n", url)
 	web3Url.Url = url
 	web3Url.HttpHeaders = httpHeaders
 
@@ -326,8 +327,8 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 			return web3Url, err
 		}
 		resolveModeReturn, err := client.callContract(web3Url.ContractAddress, web3Url.ChainId, resolveModeCalldata)
-
-		// Determine if the error is a JSON error (the RPC call was successful (HTTP 200) but 
+		fmt.Printf("==resolveModeReturn: %x\n", resolveModeReturn)
+		// Determine if the error is a JSON error (the RPC call was successful (HTTP 200) but
 		// the JSON returned indicate an error (we assume execution error)
 		isExecutionRevertedError := false
 		if err != nil {
