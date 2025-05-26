@@ -331,9 +331,11 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 		// the JSON returned indicate an error (we assume execution error)
 		isExecutionRevertedError := false
 		if err != nil {
+			fmt.Printf("==err: %v\n", err.Error())
 			if wperr, ok := err.(*Web3ProtocolError); ok {
 				if wperr.Type == Web3ProtocolErrorTypeRPCJsonError {
 					isExecutionRevertedError = true
+					fmt.Printf("	==isExecutionRevertedError: %v\n", wperr.Error())
 				}
 			}
 		}

@@ -36,7 +36,7 @@ func (client *Client) parseAutoModeUrl(web3Url *Web3URL) (err error) {
 		return err
 	}
 	if validMethodName == false {
-		return &Web3ProtocolError{HttpCode: http.StatusBadRequest, Err: errors.New("Invalid method name")}
+		return &Web3ProtocolError{HttpCode: http.StatusBadRequest, Err: errors.New("Invalid method name: " + methodName)}
 	}
 	web3Url.ContractCallMode = ContractCallModeMethod
 	web3Url.MethodName = methodName
