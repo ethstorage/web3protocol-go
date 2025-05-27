@@ -22,12 +22,14 @@ type ResolveModeCacheKey struct {
 }
 
 type DomainNameService string
+
 const (
 	DomainNameServiceENS  = "ens"
 	DomainNameServiceW3NS = "w3ns"
 )
 
 type ResolveMode string
+
 const (
 	ResolveModeAuto             = "auto"
 	ResolveModeManual           = "manual"
@@ -35,12 +37,14 @@ const (
 )
 
 type ContractCallMode string
+
 const (
 	ContractCallModeCalldata = "calldata"
 	ContractCallModeMethod   = "method"
 )
 
 type ContractReturnProcessing string
+
 const (
 	// Expect the whole returned data to be ABI-encoded bytes. Decode.
 	ContractReturnProcessingDecodeABIEncodedBytes = "decodeABIEncodedBytes"
@@ -58,12 +62,12 @@ const (
 type ParsedWeb3Url struct {
 	Protocol string
 	Hostname string
-	ChainId string
+	ChainId  string
 
 	// The PathQuery is the full path, including the Pathname and Query
 	PathQuery string
-	Path string
-	Query string
+	Path      string
+	Query     string
 
 	Fragment string
 }
@@ -74,7 +78,7 @@ type Web3URL struct {
 	Url string
 	// The request HTTP headers
 	HttpHeaders map[string]string
-	
+
 	// A raw splitting of the web3 URL parts, to be used by the processing
 	// You should not use this directly outside of this package
 	UrlParts ParsedWeb3Url
@@ -136,7 +140,7 @@ type FetchedWeb3URL struct {
  * the bytes output and the HTTP code and headers, as well as plenty of informations on
  * how the processing was done.
  *
- * Unlike FetchUrl(), this function does not use the built-in worker system which 
+ * Unlike FetchUrl(), this function does not use the built-in worker system which
  * aggregates identical requests and limits the number of parallel requests.
  * On the other hand, it does have the per-RPC limit of parralel requests.
  */
@@ -147,14 +151,16 @@ func (client *Client) FetchUrlDirect(url string, httpHeaders map[string]string) 
 		fetchedUrl.ParsedUrl = &parsedUrl
 		return
 	}
-
-	// Attempt to make a response right away, without a contract call : 
+	fmt.Println("===parsedUrl done")
+	// Attempt to make a response right away, without a contract call :
 	// We can do it if we know the output has not changed (see ERC-7774 resource request caching)
 	earlyFetchedUrl, success, err := client.AttemptEarlyResponse(&parsedUrl)
 	if err != nil {
 		fetchedUrl.ParsedUrl = &parsedUrl
 		return
 	}
+	fmt.Println("===AttemptEarlyResponse done. result:", success)
+
 	if success {
 		return earlyFetchedUrl, nil
 	}
@@ -162,6 +168,7 @@ func (client *Client) FetchUrlDirect(url string, httpHeaders map[string]string) 
 	// Fetch the contract return data
 	contractReturn, err := client.FetchContractReturn(&parsedUrl)
 	if err != nil {
+		fmt.Printf("===FetchContractReturn error: %v\n", err)
 		fetchedUrl.ParsedUrl = &parsedUrl
 		return
 	}
@@ -320,7 +327,7 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 	resolveMode, resolveModeIsCached := client.ResolveModeCache.Get(resolveModeCacheKey)
 	if resolveModeIsCached {
 		web3Url.ResolveMode = resolveMode
-	// Not cached: Call the resolveMode in the contract
+		// Not cached: Call the resolveMode in the contract
 	} else {
 		resolveModeCalldata, err := methodCallToCalldata("resolveMode", []abi.Type{}, []interface{}{})
 		if err != nil {
@@ -348,22 +355,23 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 			len(resolveModeReturn) == 0 && err == nil ||
 			isExecutionRevertedError {
 			web3Url.ResolveMode = ResolveModeAuto
-		// Manual : exact match
+			// Manual : exact match
 		} else if len(resolveModeReturn) == 32 && common.Bytes2Hex(resolveModeReturn) == "6d616e75616c0000000000000000000000000000000000000000000000000000" {
 			web3Url.ResolveMode = ResolveModeManual
-		// ResourceRequest : exact match
+			// ResourceRequest : exact match
 		} else if len(resolveModeReturn) == 32 && common.Bytes2Hex(resolveModeReturn) == "3532313900000000000000000000000000000000000000000000000000000000" {
 			web3Url.ResolveMode = ResolveModeResourceRequests
-		// We got an error
+			// We got an error
 		} else if err != nil {
 			return web3Url, err
-		// Other cases (method returning non recognized value) : throw an error
+			// Other cases (method returning non recognized value) : throw an error
 		} else {
 			return web3Url, &Web3ProtocolError{HttpCode: http.StatusBadRequest, Err: errors.New("Unsupported resolve mode")}
 		}
 
 		// Cache the resolve mode
 		client.ResolveModeCache.Add(resolveModeCacheKey, web3Url.ResolveMode)
+		fmt.Printf("===resolveMode saved to cache: %v\n", web3Url.ResolveMode)
 	}
 
 	// Then process the resolve-mode-specific parts
