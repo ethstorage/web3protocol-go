@@ -170,7 +170,6 @@ func (client *Client) GetSystemRpcUrl(chain int) (rpcUrl string, err error) {
 	return
 }
 
-
 // Call a contract with calldata
 func (client *Client) callContract(contract common.Address, chain int, calldata []byte) (contractReturn []byte, err error) {
 	// Find an available RPC for the chain. If no available RPC, find one in tooManyRequests state. If
@@ -199,7 +198,6 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 		Value:     nil,
 	}
 
-
 	//
 	// Loop: For a given time, we try to call the contract.
 	// As long as the RPC is 429, we wait for it to be available
@@ -208,7 +206,7 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 
 	// Wait for one request slot to be available
 	rpc.RequestSemaphone <- struct{}{}
-	defer func() {<-rpc.RequestSemaphone}()
+	defer func() { <-rpc.RequestSemaphone }()
 
 	// How long did we wait for the RPC to be available
 	rpcWaitedDuration := 0 * time.Second
@@ -235,10 +233,10 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 				rpcWaitedDuration += rpcWaitInterval
 				if rpcWaitedDuration > maxRpcWaitedDuration {
 					return contractReturn, &Web3ProtocolError{
-						Type: Web3ProtocolErrorTypeRPCError,
-						HttpCode: http.StatusBadRequest,
+						Type:        Web3ProtocolErrorTypeRPCError,
+						HttpCode:    http.StatusBadRequest,
 						RpcHttpCode: http.StatusTooManyRequests,
-						Err: errors.New("RPC is returning 429, waited too long for it to be available"),
+						Err:         errors.New("RPC is returning 429, waited too long for it to be available"),
 					}
 				}
 				time.Sleep(rpcWaitInterval)
@@ -247,13 +245,13 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 				client.RpcsMutex.RLock()
 				rpcState = rpc.State
 				client.RpcsMutex.RUnlock()
-			// 401 State (Would be weird to switch from 429 to 401, but anyway let's check)
+				// 401 State (Would be weird to switch from 429 to 401, but anyway let's check)
 			} else if rpcState == RpcStateUnauthorized {
 				return contractReturn, &Web3ProtocolError{
-					Type: Web3ProtocolErrorTypeRPCError,
-					HttpCode: http.StatusBadRequest,
+					Type:        Web3ProtocolErrorTypeRPCError,
+					HttpCode:    http.StatusBadRequest,
 					RpcHttpCode: http.StatusUnauthorized,
-					Err: errors.New("RPC is returning 401 Unauthorized"),
+					Err:         errors.New("RPC is returning 401 Unauthorized"),
 				}
 			}
 		}
@@ -265,23 +263,24 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 		// Do the call
 		contractReturn, err = ethClient.CallContract(context.Background(), callMessage, nil)
 
-
 		//
 		// Handle errors of the call execution
 		//
 
 		if err != nil {
+			fmt.Printf("=======Original: callContract Error %+v\n", err)
+
 			// fmt.Printf("callContract Error %+v\n", err)
 			// fmt.Printf("callContract Error type: %T\n", err)
 
 			// If the error is of type rpc.jsonError (RPC call succeeded, but JSON returned is an error)
 			if jsonError, ok := err.(JsonError); ok {
 				return contractReturn, &Web3ProtocolError{
-					Type: Web3ProtocolErrorTypeRPCJsonError,
-					HttpCode: http.StatusBadRequest,
+					Type:          Web3ProtocolErrorTypeRPCJsonError,
+					HttpCode:      http.StatusBadRequest,
 					JsonErrorCode: jsonError.ErrorCode(),
 					JsonErrorData: jsonError.ErrorData(),
-					Err: err,
+					Err:           err,
 				}
 			}
 
@@ -289,7 +288,7 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 			if _, ok := err.(goEthereumRpc.HTTPError); !ok {
 				return contractReturn, &Web3ProtocolError{
 					HttpCode: http.StatusBadRequest,
-					Err: err,
+					Err:      err,
 				}
 			}
 
@@ -302,19 +301,19 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 				rpc.State = RpcStateUnauthorized
 				client.RpcsMutex.Unlock()
 				return contractReturn, &Web3ProtocolError{
-					Type: Web3ProtocolErrorTypeRPCError,
-					HttpCode: http.StatusBadRequest,
+					Type:        Web3ProtocolErrorTypeRPCError,
+					HttpCode:    http.StatusBadRequest,
 					RpcHttpCode: rpcErr.StatusCode,
-					Err: err,
+					Err:         err,
 				}
 			}
 			// IF the RPC is not 429, return with an error
 			if rpcErr.StatusCode != http.StatusTooManyRequests {
 				return contractReturn, &Web3ProtocolError{
-					Type: Web3ProtocolErrorTypeRPCError,
-					HttpCode: http.StatusBadRequest,
+					Type:        Web3ProtocolErrorTypeRPCError,
+					HttpCode:    http.StatusBadRequest,
 					RpcHttpCode: rpcErr.StatusCode,
-					Err: err,
+					Err:         err,
 				}
 			}
 
@@ -330,10 +329,8 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 		}
 	}
 
-
 	return
 }
-
 
 // URL.parseQuery does not preserve the order of query attributes
 // This is a version which keep order

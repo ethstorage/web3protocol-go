@@ -151,7 +151,6 @@ func (client *Client) FetchUrlDirect(url string, httpHeaders map[string]string) 
 		fetchedUrl.ParsedUrl = &parsedUrl
 		return
 	}
-	fmt.Println("===parsedUrl done")
 	// Attempt to make a response right away, without a contract call :
 	// We can do it if we know the output has not changed (see ERC-7774 resource request caching)
 	earlyFetchedUrl, success, err := client.AttemptEarlyResponse(&parsedUrl)
@@ -159,7 +158,6 @@ func (client *Client) FetchUrlDirect(url string, httpHeaders map[string]string) 
 		fetchedUrl.ParsedUrl = &parsedUrl
 		return
 	}
-	fmt.Println("===AttemptEarlyResponse done. result:", success)
 
 	if success {
 		return earlyFetchedUrl, nil
@@ -168,7 +166,6 @@ func (client *Client) FetchUrlDirect(url string, httpHeaders map[string]string) 
 	// Fetch the contract return data
 	contractReturn, err := client.FetchContractReturn(&parsedUrl)
 	if err != nil {
-		fmt.Printf("===FetchContractReturn error: %v\n", err)
 		fetchedUrl.ParsedUrl = &parsedUrl
 		return
 	}
@@ -334,16 +331,16 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 			return web3Url, err
 		}
 		resolveModeReturn, err := client.callContract(web3Url.ContractAddress, web3Url.ChainId, resolveModeCalldata)
-		fmt.Printf("==resolveModeReturn: %x\n", resolveModeReturn)
+		fmt.Printf(" >>>>>>>resolveModeReturn: %x\n", resolveModeReturn)
 		// Determine if the error is a JSON error (the RPC call was successful (HTTP 200) but
 		// the JSON returned indicate an error (we assume execution error)
 		isExecutionRevertedError := false
 		if err != nil {
-			fmt.Printf("==err: %v\n", err.Error())
+			fmt.Printf("	>>>>>>>resolveMode err: %v\n", err.Error())
 			if wperr, ok := err.(*Web3ProtocolError); ok {
 				if wperr.Type == Web3ProtocolErrorTypeRPCJsonError {
 					isExecutionRevertedError = true
-					fmt.Printf("	==isExecutionRevertedError: %v\n", wperr.Error())
+					fmt.Printf("		>>>>>>>resolveMode isExecutionRevertedError: %v\n", wperr.Error())
 				}
 			}
 		}
@@ -371,7 +368,7 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 
 		// Cache the resolve mode
 		client.ResolveModeCache.Add(resolveModeCacheKey, web3Url.ResolveMode)
-		fmt.Printf("===resolveMode saved to cache: %v\n", web3Url.ResolveMode)
+		fmt.Printf(" >>>>>>>resolveMode saved to cache: %v\n", web3Url.ResolveMode)
 	}
 
 	// Then process the resolve-mode-specific parts
