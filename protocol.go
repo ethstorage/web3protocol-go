@@ -183,7 +183,7 @@ func (client *Client) FetchUrlDirect(url string, httpHeaders map[string]string) 
  * Step 1 : Parse the URL and determine how we are going to call the main contract.
  */
 func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3Url Web3URL, err error) {
-	fmt.Printf("==ParseUrl: %v\n", url)
+	fmt.Printf(">>>>>>> ParseUrl: %v\n", url)
 	web3Url.Url = url
 	web3Url.HttpHeaders = httpHeaders
 
@@ -331,7 +331,6 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 			return web3Url, err
 		}
 		resolveModeReturn, err := client.callContract(web3Url.ContractAddress, web3Url.ChainId, resolveModeCalldata)
-		fmt.Printf(" >>>>>>>resolveModeReturn: %x\n", resolveModeReturn)
 		// Determine if the error is a JSON error (the RPC call was successful (HTTP 200) but
 		// the JSON returned indicate an error (we assume execution error)
 		isExecutionRevertedError := false
@@ -343,6 +342,14 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 					fmt.Printf("		>>>>>>>resolveMode isExecutionRevertedError: %v\n", wperr.Error())
 				}
 			}
+		}
+
+		if len(resolveModeReturn) == 32 && common.Bytes2Hex(resolveModeReturn) == "0000000000000000000000000000000000000000000000000000000000000000" ||
+			len(resolveModeReturn) == 0 && err == nil ||
+			isExecutionRevertedError {
+			fmt.Println(">>>>>>>>>>>>>>")
+			fmt.Printf(" >>>>>>>resolveModeReturn: %x\n", resolveModeReturn)
+			fmt.Println(">>>>>>>>>>>>>>")
 		}
 
 		// Auto : exact match or empty bytes32 value or empty value (method does not exist or return nothing)
@@ -368,7 +375,6 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 
 		// Cache the resolve mode
 		client.ResolveModeCache.Add(resolveModeCacheKey, web3Url.ResolveMode)
-		fmt.Printf(" >>>>>>>resolveMode saved to cache: %v\n", web3Url.ResolveMode)
 	}
 
 	// Then process the resolve-mode-specific parts
