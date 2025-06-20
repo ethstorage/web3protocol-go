@@ -335,11 +335,11 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 		// the JSON returned indicate an error (we assume execution error)
 		isExecutionRevertedError := false
 		if err != nil {
-			fmt.Printf("	>>>>>>>resolveMode err: %v\n", err.Error())
+			fmt.Printf("	>>>>>>>>>>>>>>resolveMode err: %v\n", err.Error())
 			if wperr, ok := err.(*Web3ProtocolError); ok {
 				if wperr.Type == Web3ProtocolErrorTypeRPCJsonError {
 					isExecutionRevertedError = true
-					fmt.Printf("		>>>>>>>resolveMode isExecutionRevertedError: %v\n", wperr.Error())
+					fmt.Printf("		>>>>>>>>>>>>>>resolveMode isExecutionRevertedError: %v\n", wperr.Error())
 				}
 			}
 		}
@@ -348,7 +348,7 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 			len(resolveModeReturn) == 0 && err == nil ||
 			isExecutionRevertedError {
 			fmt.Println(">>>>>>>>>>>>>>")
-			fmt.Printf(" >>>>>>>resolveModeReturn: %x\n", resolveModeReturn)
+			fmt.Printf(" >>>>>>>>>>>>>>resolveModeReturn: %x\n", resolveModeReturn)
 			fmt.Println(">>>>>>>>>>>>>>")
 		}
 
@@ -374,7 +374,13 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 		}
 
 		// Cache the resolve mode
-		client.ResolveModeCache.Add(resolveModeCacheKey, web3Url.ResolveMode)
+		if !(len(resolveModeReturn) == 0 && err == nil) {
+			client.ResolveModeCache.Add(resolveModeCacheKey, web3Url.ResolveMode)
+		} else {
+			fmt.Println(">>>>>>>>>>>>>>")
+			fmt.Printf("Resolve mode not cached for %s as it could be a temporary invalid result\n", url)
+			fmt.Println(">>>>>>>>>>>>>>")
+		}
 	}
 
 	// Then process the resolve-mode-specific parts

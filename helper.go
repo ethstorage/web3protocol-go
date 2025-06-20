@@ -268,7 +268,7 @@ func (client *Client) callContract(contract common.Address, chain int, calldata 
 		//
 
 		if err != nil {
-			fmt.Printf("=======Original: callContract Error %+v\n", err)
+			fmt.Printf(">>>>>>>>>>>>>>Original: callContract Error %+v\n", err)
 
 			// fmt.Printf("callContract Error %+v\n", err)
 			// fmt.Printf("callContract Error type: %T\n", err)
