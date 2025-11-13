@@ -328,15 +328,17 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 		web3Url.ResolveMode = resolveMode
 		// Not cached: Call the resolveMode in the contract
 	} else {
-		// Check the contract code exist first
-		code, err := client.getCode(web3Url.ContractAddress, web3Url.ChainId)
-		if err != nil {
-			return web3Url, err
+		if web3Url.ChainId != 3333 && web3Url.ChainId != 333 {
+			// Check the contract code exist first if not on EthStorage
+			code, err := client.getCode(web3Url.ContractAddress, web3Url.ChainId)
+			if err != nil {
+				return web3Url, err
+			}
+			if len(code) == 0 {
+				return web3Url, &Web3ProtocolError{HttpCode: http.StatusNotFound, Err: errors.New("Contract does not exist")}
+			}
+			fmt.Println(">>>>>>> Contract code checked done.")
 		}
-		if len(code) == 0 {
-			return web3Url, &Web3ProtocolError{HttpCode: http.StatusNotFound, Err: errors.New("Contract does not exist")}
-		}
-
 		resolveModeCalldata, err := methodCallToCalldata("resolveMode", []abi.Type{}, []interface{}{})
 		if err != nil {
 			return web3Url, err
