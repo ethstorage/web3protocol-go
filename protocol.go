@@ -2,6 +2,7 @@ package web3protocol
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type ResolveModeCacheKey struct {
@@ -326,6 +328,15 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 		web3Url.ResolveMode = resolveMode
 		// Not cached: Call the resolveMode in the contract
 	} else {
+		// Check the contract code exist first
+		code, err := client.getCode(web3Url.ContractAddress, web3Url.ChainId)
+		if err != nil {
+			return web3Url, err
+		}
+		if len(code) == 0 {
+			return web3Url, &Web3ProtocolError{HttpCode: http.StatusNotFound, Err: errors.New("Contract does not exist")}
+		}
+
 		resolveModeCalldata, err := methodCallToCalldata("resolveMode", []abi.Type{}, []interface{}{})
 		if err != nil {
 			return web3Url, err
@@ -374,13 +385,13 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 		}
 
 		// Cache the resolve mode
-		if !(len(resolveModeReturn) == 0 && err == nil) {
-			client.ResolveModeCache.Add(resolveModeCacheKey, web3Url.ResolveMode)
-		} else {
-			fmt.Println(">>>>>>>>>>>>>>")
-			fmt.Printf("Resolve mode not cached for %s as it could be a temporary invalid result\n", url)
-			fmt.Println(">>>>>>>>>>>>>>")
-		}
+		// if !(len(resolveModeReturn) == 0 && err == nil) {
+		// 	client.ResolveModeCache.Add(resolveModeCacheKey, web3Url.ResolveMode)
+		// } else {
+		// 	fmt.Println(">>>>>>>>>>>>>>")
+		// 	fmt.Printf("Resolve mode not cached for %s as it could be a temporary invalid result\n", url)
+		// 	fmt.Println(">>>>>>>>>>>>>>")
+		// }
 	}
 
 	// Then process the resolve-mode-specific parts
@@ -413,6 +424,30 @@ func (client *Client) AttemptEarlyResponse(web3Url *Web3URL) (fetchedWeb3Url Fet
 /**
  * Step 3: Make the call to the main contract.
  */
+// getCode fetches the bytecode of a contract at the given address and chain
+func (client *Client) getCode(address common.Address, chainId int) ([]byte, error) {
+	// Find an available RPC for the chain
+	rpc, err := client.findAvailableRpc(chainId, true)
+	if err != nil {
+		return nil, &Web3ProtocolError{HttpCode: http.StatusBadRequest, Err: err}
+	}
+
+	// Create connection
+	ethClient, err := ethclient.Dial(rpc.Config.Url)
+	if err != nil {
+		return nil, &Web3ProtocolError{HttpCode: http.StatusBadRequest, Err: err}
+	}
+	defer ethClient.Close()
+
+	// Call eth_getCode
+	code, err := ethClient.CodeAt(context.Background(), address, nil)
+	if err != nil {
+		return nil, &Web3ProtocolError{HttpCode: http.StatusBadRequest, Err: err}
+	}
+
+	return code, nil
+}
+
 func (client *Client) FetchContractReturn(web3Url *Web3URL) (contractReturn []byte, err error) {
 	var calldata []byte
 
