@@ -328,7 +328,7 @@ func (client *Client) ParseUrl(url string, httpHeaders map[string]string) (web3U
 		web3Url.ResolveMode = resolveMode
 		// Not cached: Call the resolveMode in the contract
 	} else {
-		if web3Url.ChainId != 3333 && web3Url.ChainId != 333 {
+		if web3Url.ChainId != 3333 && web3Url.ChainId != 333 && web3Url.ChainId != 3337 {
 			// Check the contract code exist first if not on EthStorage
 			code, err := client.getCode(web3Url.ContractAddress, web3Url.ChainId)
 			if err != nil {
